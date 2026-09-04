@@ -1,31 +1,40 @@
+---
+paths:
+  - "**/*.kt"
+  - "**/*.kts"
+  - "**/build.gradle.kts"
+  - "**/build.gradle"
+---
+
 # 架構規範 — Clean Architecture × 多模組
 
 ---
 
 ## 1. 三層架構
 
-```
-┌──────────────────────────────────────────────────┐
-│                Presentation 層                    │
-│  ┌────────────┐  ┌───────────┐  ┌─────────────┐  │
-│  │  Compose   │─▶│ ViewModel │─▶│  UiState /  │  │
-│  │  Screen    │  │           │  │  UiEvent    │  │
-│  └────────────┘  └─────┬─────┘  └─────────────┘  │
-│                        │                          │
-├────────────────────────┼─────────────────────────┤
-│                  Domain 層 (純 Kotlin)            │
-│  ┌─────────────┐ ┌─────┴──────┐ ┌─────────────┐  │
-│  │   Entity    │ │  UseCase   │ │ Repository  │  │
-│  │ (業務模型)  │ │ (業務邏輯) │ │ (Interface) │  │
-│  └─────────────┘ └────────────┘ └──────┬──────┘  │
-│                                        │          │
-├────────────────────────────────────────┼─────────┤
-│                   Data 層              │          │
-│  ┌──────────────┐ ┌──────────┐ ┌───────┴──────┐  │
-│  │RepositoryImpl│ │ DTO /    │ │  DataSource  │  │
-│  │              │ │ Mapper   │ │ (API / DB)   │  │
-│  └──────────────┘ └──────────┘ └──────────────┘  │
-└──────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Presentation["Presentation 層"]
+        Screen["Compose Screen"] --> VM["ViewModel"] --> UiState["UiState / UiEvent"]
+    end
+
+    subgraph Domain["Domain 層（純 Kotlin）"]
+        Entity["Entity<br/>（業務模型）"]
+        UseCase["UseCase<br/>（業務邏輯）"]
+        RepoInterface["Repository<br/>（Interface）"]
+    end
+
+    subgraph Data["Data 層"]
+        RepoImpl["RepositoryImpl"]
+        Mapper["DTO / Mapper"]
+        DataSource["DataSource<br/>（API / DB）"]
+    end
+
+    VM --> UseCase --> RepoInterface
+    RepoImpl -. implements .-> RepoInterface
+    RepoImpl --> Mapper
+    RepoImpl --> DataSource
+    Entity ~~~ RepoImpl
 ```
 
 **依賴方向**: `Presentation → Domain ← Data`
