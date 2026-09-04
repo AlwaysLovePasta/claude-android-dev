@@ -7,22 +7,11 @@
 ## 目錄結構
 
 ```
-android-dev/
-├── CLAUDE.md                          # 主要設定：Tech Stack、設計原則、回應規則
-├── rules/
-│   ├── architecture.md                # Clean Architecture × 多模組依賴規則
-│   ├── coding.md                      # Kotlin 程式慣例（命名、Null Safety、不可變性）
-│   ├── solid.md                       # SOLID 原則 Kotlin 範例
-│   ├── testing.md                     # 測試策略與 UseCase/ViewModel 測試模板
-│   ├── workflow.md                    # 任務分級與 Architect / Practitioner Mode
-│   └── templates/
-│       ├── domain.md                  # Domain 層程式碼模板
-│       ├── data.md                    # Data 層程式碼模板
-│       ├── presentation.md            # Presentation 層程式碼模板
-│       └── testing.md                 # 測試模板
-└── skills/
-    ├── android-cli/                   # android CLI 工具操作指引
-    └── jetpack-compose-audit/         # Jetpack Compose 品質審查技能
+claude-android-dev/
+├── CLAUDE.md         # 主要設定：Tech Stack、設計原則、回應規則
+├── detect.json        # 專案類型偵測條件（供 hook 泛化偵測使用）
+├── rules/              # 各主題規則，依 paths: frontmatter 按需載入
+└── skills/             # 可呼叫的工作流（android-cli、jetpack-compose-audit）
 ```
 
 ---
@@ -45,106 +34,35 @@ android-dev/
 
 ---
 
-## 安裝
+## 使用方式
 
-將此目錄複製（或 symlink）至 `~/.claude/` 下，使規則全域生效：
+這個 repo 是 [`claude-global-configuration`](https://github.com/AlwaysLovePasta/claude-global-configuration) 的 submodule（`profiles/android`）。實際生效流程：
 
-```bash
-# 複製
-cp -r android-dev ~/.claude/
+1. Global config 的 `SessionStart` hook 讀取 `detect.json`，偵測目前專案是否為 Android 專案
+2. 命中後，把這裡的 `CLAUDE.md`／`rules/*.md`／`skills/*` symlink 進**當前專案**的 `.claude/` 目錄
+3. Claude Code 依原生機制決定何時載入：`rules/*.md` 靠 `paths:` frontmatter 依檔案類型觸發，`skills/*` 靠 description 比對
 
-# 或 symlink（推薦，方便追蹤版本）
-ln -s /path/to/android-dev ~/.claude/android-dev
-```
-
-如需限定特定專案生效，將 `CLAUDE.md` 與 `rules/` 複製至專案根目錄的 `.claude/` 下。
+不需要手動複製或 symlink 這個目錄；只要裝好 `claude-global-configuration` 就會自動生效。
 
 ---
 
-## 規則說明
+## 規則一覽
 
-### `rules/architecture.md`
-
-定義 Clean Architecture 三層（Presentation / Domain / Data）的依賴方向，以及對應的多模組拓撲：
-
-```
-:app → :feature:* → :core:domain ← :core:data
-                  → :core:ui
-                  → :core:common
-```
-
-包含 Feature 模組的完整目錄結構範本。
-
-### `rules/coding.md`
-
-Kotlin 程式慣例（`paths: **/*.kt, **/*.kts` 自動載入）：
-
-- 元件命名表（UseCase / Repository / ViewModel / UiState / UiEvent）
-- 禁止 `!!`、禁止在 ViewModel 中吞掉例外
-- `val` 優先、`internal`/`private` 預設可見性
-- 副作用隔離規則
-
-### `rules/solid.md`
-
-五大原則的 Kotlin 範例，含 ✅ 正確示範與 ❌ 反模式。
-
-### `rules/testing.md`
-
-測試分層（Domain Unit → Data Unit → ViewModel Unit → Compose UI），包含：
-
-- UseCase 測試模板（正常路徑、錯誤路徑、邊界條件）
-- ViewModel 測試模板（StateFlow 發射驗證）
-- Fake 優先於 Mock 的理由與範例
-
-### `rules/workflow.md`
-
-依**業務重要性 / 技術耦合度 / 領域複雜度**三維評估任務，對應兩種模式：
-
-| 模式 | 觸發條件 | 行為 |
-|---|---|---|
-| **Architect Mode** | 任一維度為「高」 | 釐清需求 → 架構提案（含 trade-offs）→ 技術債標示 → 實作指引 |
-| **Practitioner Mode** | 全部為「低」 | 確認目標 → 直接給出完整方案 → 簡要說明 |
-
----
-
-## Skills
-
-### `android-cli`
-
-> **前置需求**：此 skill 依賴 `android` CLI 工具，使用前須先安裝。
-> 安裝方式請參考官方文件：[Android CLI for AI agents](https://developer.android.com/tools/agents/android-cli)
-
-操作 `android` CLI 工具的完整指引，涵蓋：
-
-- **SDK 管理**：`android sdk install / update / remove / list`
-- **專案建立**：`android create <template> --name --output`
-- **裝置互動**：部署、截圖、Layout Inspection
-- **模擬器管理**：`android emulator create / start / stop / list`
-- **文件搜尋**：`android docs search` — 查詢 Android 官方知識庫
-
-觸發方式：使用者要求操作 Android 裝置、建立專案、管理 SDK，或詢問 `android` CLI 指令。
-
-### `jetpack-compose-audit`
-
-> 來源：https://github.com/hamen/compose_skill
-
-對 Compose 程式庫進行嚴格的品質審查，產出評分報告（`COMPOSE-AUDIT-REPORT.md`）。
-
-**審查四大類別**（各 0–10 分）：
-
-| 類別 | 重點 |
+| 檔案 | 內容 |
 |---|---|
-| Performance | 組合期昂貴運算、可跳過率、Lazy list key |
-| State Management | 狀態提升正確性、單一事實來源 |
-| Side Effects | Effect API 選擇、effect key、stale lambda |
-| Composable API Quality | `modifier` 位置、參數順序、可重用性 |
+| `rules/architecture.md` | Clean Architecture 三層與多模組依賴規則 |
+| `rules/coding.md` | Kotlin 程式慣例（命名、Null Safety、不可變性） |
+| `rules/solid.md` | SOLID 五大原則的 Kotlin 範例 |
+| `rules/testing.md` | 測試分層策略與模板 |
+| `rules/workflow.md` | 任務分級，判斷 Architect / Practitioner Mode |
+| `rules/templates/*.md` | 供上述規則引用的詳細程式碼範例 |
 
-**關鍵特性**：
-- 自動執行 Compose Compiler Report（透過 `--init-script` 注入，不修改任何專案檔案）
-- 每個扣分項目必須附上官方文件 URL
-- 有量化天花板機制：`skippable%` 直接限制 Performance 分數上限
+## Skills 一覽
 
-觸發方式：「audit this Compose repo」、「score this codebase」、「review state hoisting」等。
+| Skill | 用途 |
+|---|---|
+| `android-cli` | 操作 `android` CLI（SDK 管理、建立專案、裝置互動、模擬器）。需先安裝該 CLI，見 [官方文件](https://developer.android.com/tools/agents/android-cli) |
+| `jetpack-compose-audit` | 對 Compose 程式碼做量化品質審查，產出評分報告。來源：https://github.com/hamen/compose_skill |
 
 ---
 
