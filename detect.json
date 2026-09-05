@@ -2,8 +2,8 @@
   "markers": [
     { "path": "build.gradle.kts" },
     { "path": "build.gradle" },
-    { "path": "app/build.gradle.kts" },
-    { "path": "app/build.gradle" },
+    { "glob": "build.gradle.kts", "maxdepth": 3 },
+    { "glob": "build.gradle", "maxdepth": 3 },
     { "glob": "AndroidManifest.xml", "maxdepth": 5 }
   ]
 }
